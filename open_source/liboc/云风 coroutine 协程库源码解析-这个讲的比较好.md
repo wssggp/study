@@ -1,9 +1,8 @@
 最近不知道咋回事突然对**协程**的原理挺感兴趣，虽然之前也学习过Go语言，接触过协程，但是其实并不太了解具体的原理，尤其看到知乎上stackless与stackful之间作比较的文章，个人表示真心看不懂，但是带着越是看不懂越要装逼的冲动，上网查了查一些协程的实现，目前感觉比较知名的有：[微信libco](https://links.jianshu.com/go?to=https%3A%2F%2Fgithub.com%2FTencent%2Flibco)、[libgo](https://links.jianshu.com/go?to=https%3A%2F%2Fgithub.com%2Fyyzybb537%2Flibgo)、Go语言作者之一的Russ Cox个人写的[libtask](https://links.jianshu.com/go?to=https%3A%2F%2Fswtch.com%2Flibtask%2F)、[Java协程库](https://links.jianshu.com/go?to=http%3A%2F%2Fwww.paralleluniverse.co%2Fquasar%2F)以及本文要剖析的云风写的[coroutine](https://links.jianshu.com/go?to=https%3A%2F%2Fgithub.com%2Fcloudwu%2Fcoroutine%2F)。不废话，先上图：
 
-![img](https:////upload-images.jianshu.io/upload_images/14447586-5a8a447feba2edfb.png?imageMogr2/auto-orient/strip|imageView2/2/w/1160/format/webp)
+<img src="D:\work\notes\study\open_source\liboc\assert\image-20200911222849684.png" alt="image-20200911222849684" style="zoom:80%;" />
 
 coroutine.png
-
 
  从上图可以看出coroutine有以下两个特点：
  第一：代码少，仅仅用不到300行代码就实现了协程的核心逻辑，对此只有一个大写的服。
@@ -42,9 +41,11 @@ void main(){
 
 猜猜这个执行结果是啥？ 先上答案：
 
-![img](https:////upload-images.jianshu.io/upload_images/14447586-b708f432addef927.png?imageMogr2/auto-orient/strip|imageView2/2/w/453/format/webp)
-
-result.png
+```bash
+I come here
+I come here
+end of main!
+```
 
 
  可以看出 I come here执行了两次， why？我们来一句一句的解释：首先声明了两个变量context1和context2，可以把这两个变量理解为容器，专门用来放当前环境的，第三行的时候执行了getcontext(&context1)意思是把当前上下文环境保存到context1这个变量中，然后打印了第一次“I come here”，然后运行到isVisit，因为一开始isVisit=0，所以会进入if语句之中，运行到swapcontext时候，这个函数的含义是把当前上下文环境保存到context2之中，同时跳到context1对应的上下文环境之中。由于context1当时保存的是getcontext调用时的上下文环境中（**运行程序到第几行也是上下文环境中一个元素**），所以swapcontext调用完毕后，又会切换到printf对应的这一行，再次打印出第二次的“I come here”，但是此时之前isVisit已经设置为1了，所以if不会进入了，直接到“end of main”了，程序结束！其实这里还是有个东西没有说清楚，上下文环境到底包含什么？ 我们知道真正执行指令归根结底还是CPU，而CPU在运行程序时会借助于很多寄存器，比如EIP（永远指向下一条要执行程序的地址）、ESP（stack pointer栈指针）、EBP（base pointer基址寄存器）等等，这些其实就是所谓的上下文环境，比如EIP，程序在执行时要靠这个寄存器指示下一步去执行哪条指令，如果你切换到其他**协程（线程也如此）**，回来的时候EIP已经找不到了，那你不悲剧了？那**协程（线程也如此）**岂不是又要重头来过？那这个时候显然需要一块内存去把这个上下文环境保存住，下次回来的时候从内存拿出来接着执行就行，就跟没有切换一个样。针对**协程**来说，上文Linux提供的ucontext_t这个变量就起到这个存储上下文的作用（**线程切换的上下文存储涉及到ring的改变 由操作系统完成的 而协程切换上下文保存需要咱们自己搞定 操作系统根本不参与 不过这样也减少了用户态与内核态的切换**）。结合这段话再回头看看上面的程序，应该会有新的体会。
@@ -114,11 +115,9 @@ makecontext(&C->ctx, (void (*)(void)) mainfunc, 2, (uint32_t)ptr, (uint32_t)(ptr
 
 具体操作见下图：
 
+<img src=".\assert\image-20200911223054020.png" alt="image-20200911223054020" style="zoom:80%;" />
 
 
-![img](https:////upload-images.jianshu.io/upload_images/14447586-6131e482470f6708.png?imageMogr2/auto-orient/strip|imageView2/2/w/1158/format/webp)
-
-image.png
 
 
  几个注意点，一是注意gcc 别忘了加上-g参数，这是为了生成可以调试的信息，否则gdb无法调试。gdb常用的调试命令可以参照  [gdb tutorial](https://links.jianshu.com/go?to=https%3A%2F%2Fwww.cs.cmu.edu%2F~gilpin%2Ftutorial%2F)
@@ -132,7 +131,7 @@ image.png
  这里有两个点：一是少，少是因为现在操作系统的栈增长方向都是像地址减少的方向增加的，这个是目前通用的实现，至于为啥无从考究。也就是说，当我们调用push命令压栈一个元素，地址是减少的；二是为啥少8，那是因为目前我使用的linux是64位的，栈一个元素占用8个字节，虽然char只有一个字节，但是为了内存对齐（方便硬件读取 对齐后读取快），还是会在栈上给char分配8个字节（如果之前学过数字电子线路的同学应该知道内存地址编码的问题，如果不对齐，硬件会花费多次才能读出想要的内容，所以现在一般都会提高读取速度进行内存对齐）。
  既然说到栈了，其实栈是一种很有趣的数据结构，太多东西都用到它了，比如JVM对字节码的执行、Vue源码中解析模板生成AST、spring解析@Configure、@Import注解、Tomcat对xml的解析（Digester类）等等，太多栈的使用场景，这可不是一句简单的先进后出可以概括的，里面有很多深刻的内容。而在函数调用这个场景里，操作系统通常会利用栈存储返回地址、函数参数、局部变量等消息（详细分析可以参考 [函数如何使用栈](https://links.jianshu.com/go?to=https%3A%2F%2Fwww.zhihu.com%2Fquestion%2F22444939)），我们只看一个比较重要的图：
 
-![img](https:////upload-images.jianshu.io/upload_images/14447586-1fcb61def3284750.png?imageMogr2/auto-orient/strip|imageView2/2/w/922/format/webp)
+<img src=".\assert\image-20200911223138793.png" alt="image-20200911223138793" style="zoom:80%;" />
 
 栈
 

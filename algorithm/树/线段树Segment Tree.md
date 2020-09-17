@@ -13,7 +13,9 @@
 
 一颗线段树的构造就是根据区间的性质的来构造的, 如下是一棵区间`[0, 3]`的线段树，每个`[start, end]`都是一个二叉树中的节点。
 
-![img](https:////upload-images.jianshu.io/upload_images/3415798-73454346218c96f3.png?imageMogr2/auto-orient/strip|imageView2/2/w/408/format/webp)
+<img src="..\..\assert\image-20200912085632348.png" alt="image-20200912085632348" style="zoom:80%;" />
+
+
 
 [0, 3]的线段树
 
@@ -23,7 +25,9 @@
  上述的区间存储的只是区间的左右边界。我们可以将区间的最大值加入进来,也就是树中的`Node`需要存储`left`，`right`左右子节点外，还需要存储`start`, `end`, `val`区间的范围和区间内表示的值。
  **可以储存不同的值，例如区间内的最大值，最小值，区间的求和等等。**
 
-![img](https:////upload-images.jianshu.io/upload_images/3415798-d4bdd5d19ad20012.png?imageMogr2/auto-orient/strip|imageView2/2/w/476/format/webp)
+<img src="..\..\assert\image-20200912085728272.png" alt="image-20200912085728272" style="zoom:80%;" />
+
+
 
 将区间的最大值加入进来
 
@@ -68,7 +72,9 @@ public class SegmentTreeNode {
 
 比如原数组 `A = [1, 4, 2, 3]`
 
-![img](https:////upload-images.jianshu.io/upload_images/3415798-a60cc510252e8504.png?imageMogr2/auto-orient/strip|imageView2/2/w/468/format/webp)
+<img src="..\..\assert\image-20200912085805330.png" alt="image-20200912085805330" style="zoom:80%;" />
+
+
 
 原数组 A = [1, 4, 2, 3]
 
@@ -106,13 +112,17 @@ public SegmentTreeNode buildhelper(int left, int right, int[] A){
 
 ### 线段树的单点更新
 
-![img](https:////upload-images.jianshu.io/upload_images/3415798-749d148b79448983.png?imageMogr2/auto-orient/strip|imageView2/2/w/500/format/webp)
+<img src="..\..\assert\image-20200912085845947.png" alt="image-20200912085845947" style="zoom:80%;" />
+
+
 
 原线段树
 
 更新序列中的一个节点，如何把这种变化体现到线段树中去，例如，将序列中的第4个点`A[3]`更新为5, 要变动3个区间中的值,分别为`[3,3],[2,3],[0,3]`
 
-![img](https:////upload-images.jianshu.io/upload_images/3415798-ab62dd476a070e5b.png?imageMogr2/auto-orient/strip|imageView2/2/w/466/format/webp)
+<img src="..\..\assert\image-20200912085923508.png" alt="image-20200912085923508" style="zoom:80%;" />
+
+
 
 A[3] 更新为5
 
@@ -147,7 +157,9 @@ public void modify(SegmentTreeNode root, int index, int value) {
 
 线段树的区间查询操作就是将当前区间分解为较小的子区间,然后由子区间的最大值就可以快速得到需要查询区间的最大值。
 
-![img](https:////upload-images.jianshu.io/upload_images/3415798-4e832396c378db55.png?imageMogr2/auto-orient/strip|imageView2/2/w/464/format/webp)
+<img src="..\..\assert\image-20200912085957531.png" alt="image-20200912085957531" style="zoom:80%;" />
+
+
 
 线段树
 

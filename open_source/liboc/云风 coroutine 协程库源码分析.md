@@ -225,7 +225,7 @@ static void _save_stack(struct coroutine *C, char *top) {
 ```
 
 这里特意用到了一个 dummy 变量，这个 dummy 的作用非常关键也非常巧妙，大家可以细细体会下。因为 dummy 变量是刚刚分配到栈上的，此时就位于 **栈的最顶部位置**。整个内存布局如下图所示：
-![img](D:\work\notes\study_notes\study\open_source\liboc\assert\coroutine_dummy.png)
+<img src=".\assert\coroutine_dummy.png" alt="img" style="zoom:80%;" />
 
 因此整个栈的大小就是从栈底到栈顶，`S->stack + STACK_SIZE - &dummy`。
 
@@ -247,7 +247,7 @@ static void _save_stack(struct coroutine *C, char *top) {
 
 在 coroutine 中协程定义了四种状态，整个运行期间，也是根据这四种状态进行轮转。
 
-![img](D:\work\notes\study_notes\study\open_source\liboc\assert\coroutine-state-machine.png)
+<img src=".\assert\coroutine-state-machine.png" alt="img" style="zoom:80%;" />
 
 # 共享栈
 
